@@ -1,0 +1,8 @@
+.DS_Store
+.gradle
+build
+.idea
+*.iml
+target
+out
+src/main/java/org/stop/parser

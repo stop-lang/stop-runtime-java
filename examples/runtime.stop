@@ -1,0 +1,197 @@
+include "./examples/package-include.stop"
+
+start A {
+    string test1
+    -> B
+}
+
+start Z {
+    -> Y
+}
+
+GetDynamicText <- string {
+    string test2
+    string layout <- GetLayout
+}
+
+GetLayout <- string {
+
+}
+
+Configuration {
+    string host
+}
+
+GetConfiguration <- Configuration {
+
+}
+
+GetDownloadURL <- string {
+    string filename
+    Configuration configuration <- GetConfiguration
+}
+
+Post {
+    enum Status {
+        DRAFT
+        PUBLISHED
+    }
+    string title
+    optional Status status
+    optional string filename
+    optional string url <- GetDownloadURL
+}
+
+async GetPosts <- [Post] throws DatabaseError {
+    timeout 10 -> GetPostsTimeoutError
+}
+
+async GetTimedOutPosts <- [Post] throws DatabaseError {
+    timeout 1 -> GetTimedOutPostsError
+}
+
+async GetFilteredPosts <- [Post] throws DatabaseError {
+    string filter
+    timeout 10 -> GetFilteredPostsTimeoutError
+}
+
+DatabaseError {
+    -> LogDatabaseError
+}
+
+stop LogDatabaseError {
+
+}
+
+stop TimeoutError {
+
+}
+
+stop GetPostsTimeoutError {
+    GetPosts timedOutState
+}
+
+stop GetFilteredPostsTimeoutError {
+    GetFilteredPosts timedOutState
+}
+
+stop GetTimedOutPostsError {
+}
+
+B {
+    optional string n <- GetN(k: aj.k)
+    J aj <- GetJ(m: h)
+    string test2
+    string dynamicText <- GetDynamicText
+    [Post] posts <- GetPosts
+    optional string query
+    optional [Post] filteredPosts <- GetFilteredPosts(filter: query)
+    optional Wow combine <- Combine
+    optional string again <- CombineAgain
+    D d
+    H h <- GetH(one: d.e.f.name, two: d.e.g.uuid)
+    optional string page_permalink
+    optional Page page <- GetPageWithPermalink(permalink: page_permalink)
+    -> C
+}
+
+D {
+    E e
+}
+
+E {
+    F f
+    optional G g
+}
+
+F {
+    string name
+}
+
+G {
+    string uuid
+}
+
+H {
+    string i
+}
+
+J {
+    optional string k
+}
+
+GetJ <- J {
+    H m
+}
+
+GetN <- string {
+    string k
+}
+
+GetH <- H {
+    string one
+    optional string two
+}
+
+Wow {
+    string name
+}
+
+async Combine <- Wow {
+    string dynamicText
+    optional [Post] filteredPosts
+    timeout 30 -> TimeoutError
+}
+
+async CombineAgain <- string {
+    [Post] posts
+    optional Wow combine
+    timeout 30 -> TimeoutError
+}
+
+Y {
+    [Post] posts <- GetTimedOutPosts
+    -> C
+}
+
+stop C {
+    string test3
+    H h
+    J j
+    optional string n
+}
+
+Iso {
+
+}
+
+start IncludeTest {
+    -> test.models.D
+}
+
+Page {
+    string uuid
+    string title
+}
+
+Permalink {
+    string page_uuid
+    string permalink
+}
+
+async GetPermalink <- Permalink {
+    string permalink
+    timeout 30 -> TimeoutError
+}
+
+async GetPage <- Page {
+    string uuid
+    timeout 30 -> TimeoutError
+}
+
+async GetPageWithPermalink <- Page {
+    string permalink
+    Permalink permalink_object <- GetPermalink(permalink: permalink)
+    Page page <- GetPage(uuid: permalink_object.page_uuid)
+    timeout 30 -> TimeoutError
+}

@@ -1,0 +1,4 @@
+rootProject.name = 'stop-runtime-java'
+
+include ":stop"
+project(":stop").projectDir = file("../stop-java")
