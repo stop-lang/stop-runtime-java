@@ -172,6 +172,41 @@ public class RuntimeTest {
             Assertions.assertEquals(f.getProperty("g"), "g");
             Assertions.assertEquals(f.getProperty("h"), "GetH");
         }
+        String optionalTest = (String)stop.get("optional_test");
+        Assertions.assertNotNull(optionalTest);
+        Assertions.assertEquals("OptionalGetTestAlphaOne_null_OptionalGetTestAlphaTwo_null_null", optionalTest);
+    }
+
+    @Test
+    public void dynamicOptionals() throws Exception {
+        DynamicRuntime runtime = new DynamicRuntime();
+        DynamicRuntimeBase startInstance = new DynamicRuntimeBase("Begin");
+        startInstance.put("v", "test v");
+        startInstance.put("w", "optional w");
+        DynamicRuntimeBase stop = runtime.getRuntime().start(startInstance);
+        Assertions.assertNotNull(stop);
+        Assertions.assertNotNull(runtime.getRuntime().getStop());
+        Assertions.assertEquals("End", stop.getName());
+        Assertions.assertNotNull(stop.get("v"));
+        Assertions.assertNotNull(stop.get("w"));
+        Assertions.assertNotNull(stop.get("a"));
+        Assertions.assertEquals("GetA", stop.get("a"));
+        Assertions.assertNotNull(stop.get("b"));
+        Assertions.assertEquals("GetB", stop.get("b"));
+        Assertions.assertNotNull(stop.get("c"));
+        Assertions.assertEquals("GetC", stop.get("c"));
+        Assertions.assertNotNull(stop.get("d"));
+        Assertions.assertEquals("GetD", stop.get("d"));
+        Assertions.assertNotNull(stop.get("e"));
+        StateInstance e = (StateInstance)stop.get("e");
+        Assertions.assertNotNull(e.getProperties().get("f"));
+        for (StateInstance f : (List<StateInstance>)e.getProperties().get("f")){
+            Assertions.assertEquals(f.getProperty("g"), "g");
+            Assertions.assertEquals(f.getProperty("h"), "GetH");
+        }
+        String optionalTest = (String)stop.get("optional_test");
+        Assertions.assertNotNull(optionalTest);
+        Assertions.assertEquals("OptionalGetTestAlphaOne_optional w_OptionalGetTestAlphaTwo_optional w_OptionalGetTestAlphaThree", optionalTest);
     }
 
     @Test
