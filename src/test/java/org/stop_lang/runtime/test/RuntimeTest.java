@@ -117,15 +117,6 @@ public class RuntimeTest {
     }
 
     @Test
-    public void timeout() throws Exception {
-        HelloRuntime runtime = new HelloRuntime();
-        HelloRuntimeBase startInstance = new HelloRuntimeBase("Z");
-        HelloRuntimeBase stop = runtime.getRuntime().start(startInstance);
-        Assertions.assertNotNull(stop);
-        Assertions.assertNotNull(runtime.getRuntime().getStop());
-    }
-
-    @Test
     public void badStart() throws Exception {
         HelloRuntime runtime = new HelloRuntime();
         HelloRuntimeBase startInstance = new HelloRuntimeBase("Y");

@@ -42,17 +42,14 @@ Post {
     optional string url <- GetDownloadURL
 }
 
-async GetPosts <- [Post] throws DatabaseError {
-    timeout 10 -> GetPostsTimeoutError
+GetPosts <- [Post] throws DatabaseError {
 }
 
-async GetTimedOutPosts <- [Post] throws DatabaseError {
-    timeout 1 -> GetTimedOutPostsError
+GetTimedOutPosts <- [Post] throws DatabaseError {
 }
 
-async GetFilteredPosts <- [Post] throws DatabaseError {
+GetFilteredPosts <- [Post] throws DatabaseError {
     string filter
-    timeout 10 -> GetFilteredPostsTimeoutError
 }
 
 DatabaseError {
@@ -137,16 +134,14 @@ Wow {
     string name
 }
 
-async Combine <- Wow {
+Combine <- Wow {
     string dynamicText
     optional [Post] filteredPosts
-    timeout 30 -> TimeoutError
 }
 
-async CombineAgain <- string {
+CombineAgain <- string {
     [Post] posts
     optional Wow combine
-    timeout 30 -> TimeoutError
 }
 
 Y {
@@ -179,19 +174,16 @@ Permalink {
     string permalink
 }
 
-async GetPermalink <- Permalink {
+GetPermalink <- Permalink {
     string permalink
-    timeout 30 -> TimeoutError
 }
 
-async GetPage <- Page {
+GetPage <- Page {
     string uuid
-    timeout 30 -> TimeoutError
 }
 
-async GetPageWithPermalink <- Page {
+GetPageWithPermalink <- Page {
     string permalink
     Permalink permalink_object <- GetPermalink(permalink: permalink)
     Page page <- GetPage(uuid: permalink_object.page_uuid)
-    timeout 30 -> TimeoutError
 }
