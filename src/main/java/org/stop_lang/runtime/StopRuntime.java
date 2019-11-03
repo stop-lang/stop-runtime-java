@@ -169,63 +169,6 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
         return execute(to);
     }
 
-    public List<Property> getOrderedDynamicPropertiesForState(State state){
-        List<Property> orderedProperties = new ArrayList<>();
-        Map<Property, Set<Property>> propertyDependencies = new HashMap<Property, Set<Property>>();
-
-        for (Map.Entry<String, Property> propertyEntry : state.getProperties().entrySet()) {
-            Property property = propertyEntry.getValue();
-            if (property.getProvider() != null) {
-                Set<Property> providerProperties = new HashSet<>();
-                for (Map.Entry<String, Property> providerPropertyEntry : property.getProvider().getProperties().entrySet()){
-                    if (providerPropertyEntry.getValue().getProvider()==null) {
-                        String propertyName = providerPropertyEntry.getKey();
-                        if (property.getProviderMapping() != null) {
-                            if (property.getProviderMapping().containsKey(propertyName)) {
-                                propertyName = property.getProviderMapping().get(propertyName);
-                            }
-                            propertyName = getRootFromPropertyName(propertyName);
-                        }
-                        Property providerProperty = state.getProperties().get(propertyName);
-                        if ((providerProperty != null) && (providerProperty.getProvider() != null)) {
-                            providerProperties.add(providerProperty);
-                        }
-                    }
-                }
-                propertyDependencies.put(property, providerProperties);
-            }
-        }
-
-        for (Map.Entry<Property, Set<Property>> entry : propertyDependencies.entrySet()){
-            Property property = entry.getKey();
-            Set<Property> dependencies = entry.getValue();
-            if (dependencies.isEmpty()) {
-                if (!orderedProperties.contains(property)) {
-                    orderedProperties.add(property);
-                }
-            }else {
-                if (!orderedProperties.contains(property)) {
-                    orderedProperties.add(property);
-                }
-                int index = orderedProperties.indexOf(property);
-                for (Property propertyDependency : dependencies){
-                    if (orderedProperties.contains(propertyDependency)){
-                        int depIndex = orderedProperties.indexOf(propertyDependency);
-                        if (depIndex>=index) {
-                            orderedProperties.remove(propertyDependency);
-                            index = orderedProperties.indexOf(property);
-                            orderedProperties.add(index, propertyDependency);
-                        }
-                    }else {
-                        orderedProperties.add(index, propertyDependency);
-                    }
-                }
-            }
-        }
-
-        return orderedProperties;
-    }
-
     private void gatherDynamicProperties(StateInstance to) throws StopRuntimeException, StopValidationException, StopRuntimeErrorException {
         Collection<Property> orderedDynamicProperties = to.getState().getOrderedProperties();
 

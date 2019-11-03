@@ -215,14 +215,13 @@ public class RuntimeTest {
     public void getOrderedPropertiesForState() throws IOException, StopValidationException {
         HelloRuntime runtime = new HelloRuntime();
         State b = runtime.getRuntime().getStop().getStates().get("B");
-        List<Property> properties = runtime.getRuntime().getOrderedDynamicPropertiesForState(b);
-        Assertions.assertEquals(properties.size(), 9);
+        Collection<Property> properties = b.getOrderedProperties();
+        Assertions.assertEquals(properties.size(), 13);
         int aj = -1;
         int n = -1;
         int h = -1;
         int i = 0;
         for (Property p : properties){
-            Assertions.assertNotNull(p.getProvider());
             if (p.getName().equalsIgnoreCase("aj")){
                 aj = i;
             }
