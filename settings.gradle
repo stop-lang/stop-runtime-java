@@ -1,4 +1,6 @@
 rootProject.name = 'stop-runtime-java'
 
-include ":stop"
-project(":stop").projectDir = file("../stop-java")
+if (rootProject.hasProperty("development")) {
+    include ":stop"
+    project(":stop").projectDir = file("../stop-java")
+}
