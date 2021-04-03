@@ -1,9 +1,7 @@
 package org.stop_lang.runtime;
 
 import org.stop_lang.stop.Stop;
-import org.stop_lang.stop.models.Property;
-import org.stop_lang.stop.models.State;
-import org.stop_lang.stop.models.StateInstance;
+import org.stop_lang.stop.models.*;
 import org.stop_lang.stop.validation.StopValidationException;
 
 import java.util.*;
@@ -56,13 +54,35 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
             throw new StopRuntimeException("queue state instance must be defined");
         }
 
-        State queueState = currentStateInstance.getState().getEnqueues().get(queue.getState().getName());
+        StateTransition foundStateTransition = null;
 
-        if (queueState == null){
+        for (StateTransition transition : currentStateInstance.getState().getEnqueues().values()){
+            if (transition.getState().equals(queue.getState())){
+                foundStateTransition = transition;
+                break;
+            }
+
+            if (transition.isAnnotation()){
+                for (Annotation annotation : queue.getState().getAnnotations()){
+                    if (annotation instanceof StateAnnotation){
+                        StateAnnotation stateAnnotation = (StateAnnotation) annotation;
+                        if (transition.getState().equals(stateAnnotation.getState())){
+                            foundStateTransition = transition;
+                            break;
+                        }
+                    }
+                }
+                if (foundStateTransition!=null){
+                    break;
+                }
+            }
+        }
+
+        if (foundStateTransition == null){
             throw new StopRuntimeException("Could not find queue " + queue.getState().getName());
         }
 
-        if(!queueState.isQueue()){
+        if(!foundStateTransition.getState().isQueue()){
             throw new StopRuntimeException("Invalid queue state");
         }
 
@@ -159,10 +179,59 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
 
         from.validateProperties();
 
-        State errorState = from.getState().getErrors().get(to.getState().getName());
-        State transitionState = from.getState().getTransitions().get(to.getState().getName());
+        State toState = to.getState();
 
-        if ((errorState == null) && (transitionState == null)){
+        if (toState==null){
+            throw new StopRuntimeException("Could not find state " + toState.getName());
+        }
+
+        StateTransition errorStateTransition = null;
+        for (StateTransition transition : from.getState().getErrors().values()){
+            if (transition.getState().equals(toState)){
+                errorStateTransition = transition;
+                break;
+            }
+
+            if (transition.isAnnotation()){
+                for (Annotation annotation : toState.getAnnotations()){
+                    if (annotation instanceof StateAnnotation){
+                        StateAnnotation stateAnnotation = (StateAnnotation) annotation;
+                        if (transition.getState().equals(stateAnnotation.getState())){
+                            errorStateTransition = transition;
+                            break;
+                        }
+                    }
+                }
+                if (errorStateTransition!=null){
+                    break;
+                }
+            }
+        }
+
+        StateTransition stateTransition = null;
+        for (StateTransition transition : from.getState().getTransitions().values()){
+            if (transition.getState().equals(toState)){
+                stateTransition = transition;
+                break;
+            }
+
+            if (transition.isAnnotation()){
+                for (Annotation annotation : toState.getAnnotations()){
+                    if (annotation instanceof StateAnnotation){
+                        StateAnnotation stateAnnotation = (StateAnnotation) annotation;
+                        if (transition.getState().equals(stateAnnotation.getState())){
+                            stateTransition = transition;
+                            break;
+                        }
+                    }
+                }
+                if (stateTransition!=null){
+                    break;
+                }
+            }
+        }
+
+        if ((errorStateTransition == null) && (stateTransition == null)){
             throw new StopRuntimeException("Could not find state to transition to called " + to.getState().getName());
         }
 

@@ -2,6 +2,9 @@ package org.stop_lang.runtime.test;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.stop_lang.runtime.test.annotations.AnnotationsRuntime;
+import org.stop_lang.runtime.test.annotations.AnnotationsRuntimeBase;
 import org.stop_lang.stop.models.*;
 import org.stop_lang.runtime.StopRuntimeErrorException;
 import org.stop_lang.runtime.StopRuntimeException;
@@ -235,5 +238,87 @@ public class RuntimeTest {
         }
         Assertions.assertTrue(aj < n);
         Assertions.assertTrue(h < aj);
+    }
+
+    @Test
+    public void annotations() throws Exception {
+        AnnotationsRuntime runtime = new AnnotationsRuntime();
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "Hammer");
+        params.put("weight", 1.5);
+        StateInstance tool = new StateInstance(runtime.getRuntime().getStop().getStates().get("Hammer"), params);
+
+        Map<String, Object> params1 = new HashMap<>();
+        params1.put("name", "Gala");
+        StateInstance apple1 = new StateInstance(runtime.getRuntime().getStop().getStates().get("Gala"), params1);
+
+        Map<String, Object> params2 = new HashMap<>();
+        params2.put("name", "Honeycrisp");
+        StateInstance apple2 = new StateInstance(runtime.getRuntime().getStop().getStates().get("Honeycrisp"), params2);
+
+        Collection<StateInstance> apples = new ArrayList<>();
+        apples.add(apple1);
+        apples.add(apple2);
+
+        AnnotationsRuntimeBase startInstance = new AnnotationsRuntimeBase("Begin");
+        startInstance.put("tool", tool);
+        startInstance.put("index", 1);
+        startInstance.put("apples", apples);
+        AnnotationsRuntimeBase stop = runtime.getRuntime().start(startInstance);
+        Assertions.assertNotNull(stop);
+        Assertions.assertEquals(stop.getName(), "End");
+
+        AnnotationsRuntimeBase startInstance2 = new AnnotationsRuntimeBase("Begin");
+        startInstance2.put("tool", tool);
+        startInstance2.put("index", 2);
+        AnnotationsRuntimeBase stop2 = runtime.getRuntime().start(startInstance2);
+        Assertions.assertNotNull(stop2);
+        Assertions.assertEquals(stop2.getName(), "AlternateEnding");
+
+        AnnotationsRuntimeBase startInstance3 = new AnnotationsRuntimeBase("Begin");
+        startInstance3.put("tool", tool);
+        startInstance3.put("index", 3);
+        Assertions.assertThrows(StopRuntimeException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                runtime.getRuntime().start(startInstance3);
+            }
+        });
+
+        AnnotationsRuntimeBase startInstance4 = new AnnotationsRuntimeBase("Begin");
+        startInstance4.put("tool", tool);
+        startInstance4.put("index", 4);
+        AnnotationsRuntimeBase stop4 = runtime.getRuntime().start(startInstance4);
+        Assertions.assertNotNull(stop4);
+        Assertions.assertEquals(stop4.getName(), "End");
+
+        AnnotationsRuntimeBase startInstance5 = new AnnotationsRuntimeBase("Begin");
+        startInstance5.put("tool", tool);
+        startInstance5.put("index", 5);
+        AnnotationsRuntimeBase stop5 = runtime.getRuntime().start(startInstance5);
+        Assertions.assertNotNull(stop5);
+        Assertions.assertEquals(stop5.getName(), "AnotherError");
+
+        Iterator<Annotation> it = runtime.getRuntime().getStop().getStates().get("StateWithTemplateParameters").getAnnotations().iterator();
+        StateAnnotation stateAnnotation = (StateAnnotation)it.next();
+        Assertions.assertEquals(stateAnnotation.getState().getName(), "Error");
+        Assertions.assertEquals(stateAnnotation.getParameters().get("scream"), "yes");
+        Annotation templateAnnotation = it.next();
+        Assertions.assertEquals(templateAnnotation.getParameters().get("testing"), "123");
+
+        AnnotationsRuntimeBase startInstance6 = new AnnotationsRuntimeBase("Begin");
+        startInstance6.put("tool", tool);
+        startInstance6.put("index", 3);
+        Collection<StateInstance> apples2 = new ArrayList<>();
+        apples2.add(tool);
+        startInstance6.put("apples", apples2);
+
+        Assertions.assertThrows(StopValidationException.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                runtime.getRuntime().start(startInstance6);
+            }
+        });
     }
 }

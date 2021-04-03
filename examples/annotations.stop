@@ -1,0 +1,80 @@
+Tool {
+    double weight
+}
+
+@Tool
+Hammer {
+    string name
+    double weight
+}
+
+GetTool <- @Tool {
+
+}
+
+Apple {
+    string name
+}
+
+@Apple
+Gala {
+    string name
+}
+
+@Apple
+Honeycrisp {
+    string name
+}
+
+start Begin throws @Error{
+    @Tool tool
+    int32 index
+    @Tool secondaryTool <- GetTool
+    optional [@Apple] apples
+    >> @Notifications
+    -> @End
+}
+
+@template
+stop End {
+
+}
+
+@End
+@template
+stop AlternateEnding {
+
+}
+
+@template
+stop BadEnding {
+
+}
+
+queue Notifications {
+    -> Send
+}
+
+@Notifications
+queue AppNotifications {
+    -> Send
+}
+
+stop Send {
+
+}
+
+stop Error {
+    string message
+}
+
+@Error
+stop AnotherError {
+    string message
+}
+
+@Error(scream: "yes")
+@template(testing: "123")
+StateWithTemplateParameters {
+    string message
+}
