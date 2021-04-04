@@ -5,6 +5,7 @@ import org.stop_lang.stop.models.*;
 import org.stop_lang.stop.validation.StopValidationException;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
     private final static String REFERENCE_DELIMETER = ".";
@@ -86,7 +87,7 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
             throw new StopRuntimeException("Invalid queue state");
         }
 
-        queue.validateProperties(false);
+        validateStateInstance(queue, false);
 
         implementation.enqueue(implementationInstance);
     }
@@ -104,7 +105,7 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
         this.packageImplementations.put(packageName, packageImplementation);
     }
 
-    public void removePackageImplement(String packageName){
+    public void removePackageImplementation(String packageName){
         this.packageImplementations.remove(packageName);
     }
 
@@ -149,7 +150,7 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
             return transition(contextState, errorState);
         }
 
-        stateInstance.validateProperties();
+        validateStateInstance(stateInstance, true);
 
         currentStateInstance = stateInstance;
 
@@ -177,7 +178,7 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
             throw new StopRuntimeException("From and to state instances must be defined");
         }
 
-        from.validateProperties();
+        validateStateInstance(from, true);
 
         State toState = to.getState();
 
@@ -250,7 +251,7 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
                     }
                     StateInstance providerStateInstance = mapStateInstancePropertiesToProvider(to, providerState, property.getProviderMapping());
                     gatherDynamicProperties(providerStateInstance);
-                    providerStateInstance.validateProperties();
+                    validateStateInstance(providerStateInstance, true);
                     T providerImplementationInstance = implementation.buildImplementationInstance(providerStateInstance);
 
                     try {
@@ -472,5 +473,114 @@ public class StopRuntime<T> implements StopRuntimeImplementationExecution<T> {
             }
         }
         return rootPropertyName;
+    }
+
+    private void validateStateInstance(StateInstance stateInstance, boolean validateDynamicProperties) throws StopValidationException {
+        stateInstance.validateProperties(validateDynamicProperties);
+        runValidations(stateInstance);
+    }
+
+    private void runValidations(StateInstance stateInstance) throws StopValidationException{
+        for (Property property : stateInstance.getState().getOrderedProperties()){
+            Collection<PropertyValidation> validations = property.getValidations();
+            if (validations!=null && !validations.isEmpty()){
+                Object value = stateInstance.getProperty(property.getName());
+                if (value!=null){
+                    for (PropertyValidation validation : validations){
+                        if (property.getType() == Property.PropertyType.STRING) {
+                            String valueString = (String)value;
+                            if (validation instanceof StatePropertyValidation) {
+                                StatePropertyValidation statePropertyValidation = (StatePropertyValidation) validation;
+                                State valueState = stop.getStates().get(valueString);
+                                State propertyState = statePropertyValidation.getState();
+                                if (statePropertyValidation.isInheritable()) {
+                                    if ((valueState == null) || (!valueState.equals(propertyState) && !valueState.getInheritedStates().contains(propertyState))) {
+                                        throw new StopValidationException("State instance " + stateInstance.getState().getName() + " property " + property.getName() + " doesn't validate with value " + valueString);
+                                    }
+                                }else{
+                                    if ((valueState == null) || !valueState.equals(propertyState)) {
+                                        throw new StopValidationException("State instance " + stateInstance.getState().getName() + " property " + property.getName() + " doesn't validate with value " + valueString);
+                                    }
+                                }
+                            } else {
+                                if (validation.getName().equalsIgnoreCase("regex")) {
+                                    String matches = (String) validation.getParameters().get("matches");
+                                    if (matches != null) {
+                                        if (!Pattern.matches(matches, valueString)) {
+                                            throw new StopValidationException(valueString + " doesn't match regex " + matches);
+                                        }
+                                    }
+                                }else if (validation.getName().equalsIgnoreCase("length")){
+                                    Integer min = 0;
+                                    Integer max = Integer.MAX_VALUE;
+                                    Integer exact = null;
+                                    Integer stringLength = valueString.length();
+                                    if (validation.getParameters().containsKey("min")){
+                                        Object paramValue = (Object)validation.getParameters().get("min");
+                                        if (paramValue instanceof Double){
+                                            min = ((Double)paramValue).intValue();
+                                        }
+                                    }
+                                    if (validation.getParameters().containsKey("max")){
+                                        Object paramValue = (Object)validation.getParameters().get("max");
+                                        if (paramValue instanceof Double){
+                                            max = ((Double)paramValue).intValue();
+                                        }
+                                    }
+                                    if (validation.getParameters().containsKey("exact")){
+                                        Object paramValue = (Object)validation.getParameters().get("exact");
+                                        if (paramValue instanceof Double){
+                                            exact = ((Double)paramValue).intValue();
+                                        }
+                                    }
+                                    if (exact!=null){
+                                        if (valueString.length()!=exact){
+                                            throw new StopValidationException(valueString + " is not "+ exact + "characters long");
+                                        }
+                                    }else {
+                                        if (!((stringLength>=min) && (stringLength<=max))){
+                                            throw new StopValidationException(valueString + " is not within "+ min + "..."+max+" characters");
+                                        }
+                                    }
+                                }
+                                // more
+
+                            }
+                        }else if (value instanceof Double || value instanceof Integer || value instanceof Long || value instanceof Float){
+                            if (validation.getName().equalsIgnoreCase("range")){
+                                Double valueDouble;
+                                if (value instanceof Double){
+                                    valueDouble = (Double) value;
+                                }else if (value instanceof Float){
+                                    valueDouble = ((Float)value).doubleValue();
+                                }else if (value instanceof Integer){
+                                    valueDouble = ((Integer)value).doubleValue();
+                                }else{
+                                    valueDouble = ((Long)value).doubleValue();
+                                }
+
+                                Double min = Double.MIN_VALUE;
+                                Double max = Double.MAX_VALUE;
+                                if (validation.getParameters().containsKey("min")){
+                                    Object paramValue = (Object)validation.getParameters().get("min");
+                                    if (paramValue instanceof Double){
+                                        min = ((Double)paramValue);
+                                    }
+                                }
+                                if (validation.getParameters().containsKey("max")){
+                                    Object paramValue = (Object)validation.getParameters().get("max");
+                                    if (paramValue instanceof Double){
+                                        max = ((Double)paramValue);
+                                    }
+                                }
+                                if (!((valueDouble>=min) && (valueDouble<=max))){
+                                    throw new StopValidationException(valueDouble + " is not within range "+ min + "..."+max);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

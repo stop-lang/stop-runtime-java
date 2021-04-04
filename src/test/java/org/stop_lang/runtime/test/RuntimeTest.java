@@ -265,6 +265,11 @@ public class RuntimeTest {
         startInstance.put("tool", tool);
         startInstance.put("index", 1);
         startInstance.put("apples", apples);
+        startInstance.put("apple_type", "Honeycrisp");
+        startInstance.put("digits", "123");
+        startInstance.put("email", "kyle.shank@email.com");
+        startInstance.put("number", -33.333);
+        startInstance.put("minonly", 1337L);
         AnnotationsRuntimeBase stop = runtime.getRuntime().start(startInstance);
         Assertions.assertNotNull(stop);
         Assertions.assertEquals(stop.getName(), "End");
